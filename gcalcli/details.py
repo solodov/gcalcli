@@ -259,6 +259,27 @@ class Action(SimpleSingleFieldHandler):
         return ACTION_DEFAULT
 
 
+class Attending(Handler):
+    fieldnames = ['attending']
+
+    @classmethod
+    def get(cls, event):
+        attending = 'unknown'
+        for e in event.get('attendees', []):
+            if e.get('self'):
+                attending = e['responseStatus']
+                break
+        else:
+            if 'status' in event:
+                attending = event['status']
+        return [{
+            'accepted': 'yes',
+            'confirmed': 'yes',
+            'needsAction': 'unknown',
+            'tentative': 'maybe',
+        }.get(attending, attending)]
+
+
 HANDLERS = OrderedDict([('id', ID),
                         ('time', Time),
                         ('url', Url),
@@ -268,7 +289,8 @@ HANDLERS = OrderedDict([('id', ID),
                         ('description', Description),
                         ('calendar', Calendar),
                         ('email', Email),
-                        ('action', Action)])
+                        ('action', Action),
+                        ('attending', Attending)])
 HANDLERS_READONLY = {Url, Calendar}
 
 FIELD_HANDLERS = dict(chain.from_iterable(
@@ -282,7 +304,7 @@ FIELDNAMES_READONLY = frozenset(fieldname
                                 if handler in HANDLERS_READONLY)
 
 _DETAILS_WITHOUT_HANDLERS = ['length', 'reminders', 'attendees',
-                             'attachments', 'end']
+                             'attachments', 'end', 'status']
 
 DETAILS = list(HANDLERS.keys()) + _DETAILS_WITHOUT_HANDLERS
 DETAILS_DEFAULT = {'time', 'title'}
